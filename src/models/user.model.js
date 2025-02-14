@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
   {
-    userName: {
+    username: {
       type: String,
       required: true,
       unique: true,
@@ -19,7 +19,7 @@ const userSchema = new Schema(
       lowercase: true,
       trim: true,
     },
-    fullname: {
+    fullName: {
       type: String,
       required: true,
       trim: true,
@@ -35,7 +35,7 @@ const userSchema = new Schema(
     },
     coverImage: {
       type: String,
-      required: true,
+      // required: true,
     },
     watchHistory: {
       type: Schema.Types.ObjectId,
@@ -66,8 +66,8 @@ userSchema.methods.generateAccessToken = function () {
     {
       _id: this._id,
       email: this.email,
-      fullname: this.fullname,
-      userName: this.userName,
+      fullName: this.fullName,
+      username: this.username,
     },
     process.env.ACCESS_TOKEN_SECRET,
     {

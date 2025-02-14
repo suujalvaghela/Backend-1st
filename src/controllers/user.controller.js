@@ -32,7 +32,15 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatar is required");
@@ -51,7 +59,7 @@ const registerUser = asyncHandler(async (req, res) => {
     password,
     username: username.toLowerCase(),
     avatar: avatar.url,
-    coverImage: coverImage?.url,
+    coverImage: coverImage?.url || "",
   });
 
   const createdUser = await User.findById(user._id).select(
@@ -62,7 +70,9 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Something went wrong while creating user");
   }
 
-  res
+  return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "user created successfully"));
 });
+
+export { registerUser };
