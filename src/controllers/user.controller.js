@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken = async (userId) => {
   const user = await User.findById(userId);
@@ -144,11 +145,9 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-
   // get user
   // remove token
   // res
-
 
   User.findByIdAndUpdate(
     req.user._id,
@@ -172,6 +171,55 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User Logged out"));
+});
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized Request");
+
+    try {
+      const decodedToken = jwt.verify(
+        incomingRefreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+  
+      const user = await User.findById(decodedToken._id);
+  
+      if (!user) {
+        throw new ApiError(401, "Invalid refresh token");
+      }
+  
+      if (incomingRefreshToken !== user.refreshToken) {
+        throw new ApiError(401, "refresh token is expired or used");
+      }
+  
+      const { accessToken, newRefreshToken } =
+        await generateAccessAndRefreshToken(user._id);
+    }
+  
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+  
+    return res.
+    .status(200)
+    .cookie("accessToken" , accessToken , options)
+    .cookie("refreshToken" , refreshToken , options)
+    .json(
+      new ApiResponse(
+        200,
+        {accessToken , refreshToken: newRefreshToken},
+        "accessToken generated"
+      )
+    )
+    } catch (error) {
+      throw new ApiError(401 , error?.message || "invalid refreshToken") 
+    }
+  
 });
 
 export { registerUser, loginUser, logoutUser };
